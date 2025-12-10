@@ -3,32 +3,35 @@ server {
 
     include /etc/nginx/includes/server_params.conf;
 
-    # Serve landing page at root
-    location = / {
+    # Handle root path for landing page (/, //, /index.html)
+    location ~ ^/(|index.html)?$ {
         allow   172.30.32.2;
         deny    all;
-        root /etc/nginx/html;
-        try_files /landing.html.gtpl =404;
+        alias /etc/nginx/html/landing.html;
     }
 
     # Handle each Frigate instance
-    {{ range $key, $instance := .instances }}
-    location {{ $instance.path }} {
+    {{- range .instances }}
+    location {{ .path }}/ {
         allow   172.30.32.2;
         deny    all;
+        proxy_pass {{ .server }}/;
+        include /etc/nginx/includes/proxy_params.conf;
 
-        proxy_pass {{ $instance.server }};
-        proxy_set_header X-Ingress-Path {{ $.entry }}{{ $instance.path }};
+        # WebSocket support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
 
-        {{ if $instance.proxy_pass_host }}
+        {{- if .proxy_pass_host }}
         proxy_set_header Host $http_host;
-        {{ end }}
-        {{ if $instance.proxy_pass_real_ip }}
+        {{- end }}
+        {{- if .proxy_pass_real_ip }}
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Real-IP $remote_addr;
-        {{ end }}
-
-        include /etc/nginx/includes/proxy_params.conf;
+        {{- end }}
     }
-    {{ end }}
+    {{- end }}
+    include /etc/nginx/includes/proxy_params.conf;
+
 }

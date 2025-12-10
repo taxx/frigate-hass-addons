@@ -30,12 +30,12 @@
 </head>
 <body>
     <h1>Frigate Instances</h1>
-    {{ range $key, $instance := .instances }}
+    {{- range .instances }}
     <div class="instance">
-        <h2>{{ $instance.name }}</h2>
-        <p>{{ $instance.description }}</p>
-        <a href="{{ $instance.path }}">Open Instance</a>
+        <h2>{{ .name }}</h2>
+        <p>{{ .description }}</p>
+        <a href="{{ .path }}/" target="_self">Open Instance</a>
     </div>
-    {{ end }}
+    {{- end }}
 </body>
 </html>
